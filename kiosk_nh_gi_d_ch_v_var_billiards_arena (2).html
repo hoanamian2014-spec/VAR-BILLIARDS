@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VAR BILLIARDS ARENA - Hệ Thống Đánh Giá Dịch Vụ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        arena: {
+                            dark: '#090C10',
+                            card: '#11161F',
+                            navy: '#0D1B2A',
+                            border: '#1E293B',
+                            gold: '#D4AF37',
+                            goldLight: '#F3D06B',
+                            goldDark: '#AA8620'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'scale-up': 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        scaleUp: {
+                            '0%': { opacity: '0', transform: 'scale(0.93)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        input, textarea {
+            user-select: text;
+        }
+        body {
+            background-color: #090C10;
+            color: #F8FAFC;
+            overflow-x: hidden;
+        }
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #F6DC87 0%, #D4AF37 50%, #A88218 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gold-gradient-bg {
+            background: linear-gradient(135deg, #E8C55B 0%, #D4AF37 50%, #B08D26 100%);
+        }
+        .arena-bg {
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.14) 0%, transparent 55%),
+                radial-gradient(circle at 15% 85%, rgba(13, 27, 42, 0.7) 0%, transparent 50%),
+                radial-gradient(circle at 85% 90%, rgba(212, 175, 55, 0.07) 0%, transparent 45%);
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090C10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D4AF37;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between arena-bg relative">
+
+    <!-- Nút Cài Đặt (Bánh Răng) ở góc trên bên phải -->
+    <button id="btnOpenSettings" onclick="openSettingsModal()" title="Cài đặt Google Sheet & Quản lý dữ liệu"
+        class="fixed top-4 right-4 z-40 p-3 rounded-full bg-arena-card/80 border border-arena-border text-slate-400 hover:text-arena-gold hover:border-arena-gold/60 transition-all backdrop-blur-md active:scale-95 shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    </button>
+
+    <!-- Thông báo Toast nổi -->
+    <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2"></div>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 1: MÀN HÌNH CHÀO & CHỌN CƠ SỞ                                  -->
+    <!-- ===================================================================== -->
+    <main id="screenWelcome" class="flex-1 flex flex-col items-center justify-center px-6 py-8 animate-fade-in">
+        <div class="w-full max-w-4xl flex flex-col items-center text-center">
+            
+            <!-- Logo VAR BILLIARDS ARENA chuẩn theo logoVARcut.png -->
+            <div class="mb-6 relative">
+                <div class="absolute -inset-4 rounded-full bg-arena-gold/15 blur-2xl animate-pulse-slow"></div>
+                <div id="mainLogoSlot" class="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center drop-shadow-[0_12px_28px_rgba(0,0,0,0.85)]">
+                    <!-- SVG Logo chuẩn được chèn tự động qua JS -->
+                </div>
+            </div>
+
+            <div class="mb-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-arena-navy border border-arena-gold/35 text-arena-goldLight text-xs sm:text-sm font-semibold tracking-widest uppercase">
+                <span>★</span> HỆ THỐNG ĐÁNH GIÁ CHẤT LƯỢNG DỊCH VỤ <span>★</span>
+            </div>
+
+            <h1 class="font-display font-black text-3xl sm:text-5xl md:text-6xl tracking-tight leading-tight mb-4">
+                <span class="gold-gradient-text block">VAR BILLIARDS ARENA</span>
+                <span class="text-white text-2xl sm:text-4xl md:text-5xl mt-1.5 block">XIN CHÀO QUÝ KHÁCH</span>
+            </h1>
+
+            <p class="text-slate-400 text-base sm:text-lg max-w-xl mb-9">
+                Vui lòng chạm chọn cơ sở quý khách đang trải nghiệm để bắt đầu đánh giá
+            </p>
+
+            <!-- 2 Nút Lựa Chọn Cơ Sở Lớn -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
+                <button onclick="selectBranch('CƠ SỞ TÂY SƠN')"
+                    class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-arena-card to-arena-navy border-2 border-arena-border hover:border-arena-gold p-8 sm:p-10 text-left transition-all duration-300 shadow-2xl hover:shadow-arena-gold/25 active:scale-[0.98] flex flex-col justify-between min-h-[175px]">
+                    <div class="absolute top-0 right-0 w-36 h-36 bg-arena-gold/10 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-125"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="w-12 h-12 rounded-2xl bg-arena-gold/15 border border-arena-gold/40 flex items-center justify-center text-arena-gold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                        <span class="text-xs font-bold tracking-wider uppercase text-arena-gold bg-arena-gold/10 px-3 py-1 rounded-full border border-arena-gold/25">Cơ sở 01</span>
+                    </div>
+                    <div>
+                        <h2 class="font-display font-extrabold text-2xl sm:text-3xl text-white group-hover:text-arena-goldLight transition-colors">
+                            CƠ SỞ TÂY SƠN
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
+                            <span>Chạm để đánh giá dịch vụ</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-arena-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </p>
+                    </div>
+                </button>
+
+                <button onclick="selectBranch('CƠ SỞ LONG BIÊN')"
+                    class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-arena-card to-arena-navy border-2 border-arena-border hover:border-arena-gold p-8 sm:p-10 text-left transition-all duration-300 shadow-2xl hover:shadow-arena-gold/25 active:scale-[0.98] flex flex-col justify-between min-h-[175px]">
+                    <div class="absolute top-0 right-0 w-36 h-36 bg-arena-gold/10 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-125"></div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="w-12 h-12 rounded-2xl bg-arena-gold/15 border border-arena-gold/40 flex items-center justify-center text-arena-gold">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                        <span class="text-xs font-bold tracking-wider uppercase text-arena-gold bg-arena-gold/10 px-3 py-1 rounded-full border border-arena-gold/25">Cơ sở 02</span>
+                    </div>
+                    <div>
+                        <h2 class="font-display font-extrabold text-2xl sm:text-3xl text-white group-hover:text-arena-goldLight transition-colors">
+                            CƠ SỞ LONG BIÊN
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1.5 flex items-center gap-1.5">
+                            <span>Chạm để đánh giá dịch vụ</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-arena-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 2: MÀN HÌNH ĐÁNH GIÁ & CHỌN BÀN ĐÃ CHƠI                        -->
+    <!-- ===================================================================== -->
+    <section id="screenRating" class="hidden flex-1 flex flex-col justify-between max-w-6xl w-full mx-auto px-4 sm:px-8 py-4 animate-fade-in">
+        
+        <!-- Header hiển thị Logo nhỏ, tên cơ sở và nút Đổi cơ sở -->
+        <header class="flex items-center justify-between gap-3 pb-3 border-b border-arena-border/80">
+            <button onclick="goToScreen('welcome')"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-arena-card border border-arena-border hover:border-arena-gold/60 text-slate-300 hover:text-white text-sm font-semibold transition-all active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-arena-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Đổi cơ sở</span>
+            </button>
+
+            <div class="flex items-center gap-3 px-4 py-1.5 rounded-2xl bg-arena-navy border border-arena-gold/35 shadow-md">
+                <div id="headerLogoSlot" class="w-9 h-9 flex items-center justify-center"></div>
+                <div class="text-left">
+                    <div class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Đang đánh giá tại</div>
+                    <div id="currentBranchLabel" class="font-display font-extrabold text-sm sm:text-base text-arena-goldLight leading-tight">
+                        CƠ SỞ TÂY SƠN
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-10"></div>
+        </header>
+
+        <!-- Khu vực 3 tiêu chí đánh giá lớn -->
+        <div class="my-auto py-3 text-center">
+            <h2 class="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl text-white leading-snug mb-2">
+                Quý khách vui lòng đánh giá chất lượng tại <span class="gold-gradient-text">VAR BILLIARDS ARENA</span>
+            </h2>
+            <p class="text-slate-400 text-sm sm:text-base mb-5">
+                Chọn <strong class="text-arena-goldLight">Số bàn đã chơi</strong> ở dưới cùng và chạm vào biểu tượng đánh giá
+            </p>
+
+            <div class="grid grid-cols-3 gap-4 sm:gap-7 max-w-4xl mx-auto">
+                <!-- TIÊU CHÍ 1: TỐT -->
+                <button onclick="handleRatingClick('Tốt')"
+                    class="group flex flex-col items-center justify-center p-5 sm:p-7 rounded-3xl bg-arena-card border-2 border-arena-border hover:border-emerald-400 hover:bg-emerald-950/25 transition-all duration-200 shadow-xl hover:shadow-emerald-500/20 active:scale-95">
+                    <div class="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-emerald-500/15 border-2 border-emerald-400/50 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
+                        <svg viewBox="0 0 64 64" class="w-14 h-14 sm:w-20 sm:h-20 text-emerald-400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="26" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="3.5"/>
+                            <path d="M20 26C21.5 23 25.5 23 27 26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M37 26C38.5 23 42.5 23 44 26" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M20 36C22.5 43.5 41.5 43.5 44 36H20Z" fill="currentColor" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <span class="font-display font-extrabold text-lg sm:text-2xl text-emerald-400 tracking-wide">TỐT</span>
+                    <span class="text-xs text-slate-400 mt-1 hidden sm:block">Rất hài lòng</span>
+                </button>
+
+                <!-- TIÊU CHÍ 2: BÌNH THƯỜNG -->
+                <button onclick="handleRatingClick('Bình thường')"
+                    class="group flex flex-col items-center justify-center p-5 sm:p-7 rounded-3xl bg-arena-card border-2 border-arena-border hover:border-amber-400 hover:bg-amber-950/25 transition-all duration-200 shadow-xl hover:shadow-amber-500/20 active:scale-95">
+                    <div class="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-amber-500/15 border-2 border-amber-400/50 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
+                        <svg viewBox="0 0 64 64" class="w-14 h-14 sm:w-20 sm:h-20 text-amber-400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="26" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="3.5"/>
+                            <circle cx="23.5" cy="25.5" r="3" fill="currentColor"/>
+                            <circle cx="40.5" cy="25.5" r="3" fill="currentColor"/>
+                            <line x1="22" y1="40" x2="42" y2="40" stroke="currentColor" stroke-width="3.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <span class="font-display font-extrabold text-lg sm:text-2xl text-amber-400 tracking-wide">BÌNH THƯỜNG</span>
+                    <span class="text-xs text-slate-400 mt-1 hidden sm:block">Cần cải thiện thêm</span>
+                </button>
+
+                <!-- TIÊU CHÍ 3: KÉM -->
+                <button onclick="handleRatingClick('Kém')"
+                    class="group flex flex-col items-center justify-center p-5 sm:p-7 rounded-3xl bg-arena-card border-2 border-arena-border hover:border-rose-500 hover:bg-rose-950/25 transition-all duration-200 shadow-xl hover:shadow-rose-500/20 active:scale-95">
+                    <div class="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-rose-500/15 border-2 border-rose-500/50 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform">
+                        <svg viewBox="0 0 64 64" class="w-14 h-14 sm:w-20 sm:h-20 text-rose-500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="32" r="26" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="3.5"/>
+                            <circle cx="23.5" cy="26" r="3" fill="currentColor"/>
+                            <circle cx="40.5" cy="26" r="3" fill="currentColor"/>
+                            <path d="M21 43C24 37.5 40 37.5 43 43" stroke="currentColor" stroke-width="3.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <span class="font-display font-extrabold text-lg sm:text-2xl text-rose-500 tracking-wide">KÉM</span>
+                    <span class="text-xs text-slate-400 mt-1 hidden sm:block">Chưa hài lòng</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mục Chọn Bàn Đã Chơi Ở Phía Dưới Cùng -->
+        <div id="tableSelectionBox" class="rounded-3xl bg-arena-card/95 border border-arena-border p-4 sm:p-5 shadow-2xl backdrop-blur-md transition-all">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-8 h-8 rounded-xl bg-arena-gold/20 border border-arena-gold/40 flex items-center justify-center text-arena-gold text-sm">
+                        🎱
+                    </span>
+                    <h3 class="font-display font-bold text-sm sm:text-base text-white uppercase tracking-wide">
+                        Chọn bàn quý khách đã chơi
+                    </h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Bàn đang chọn:</span>
+                    <span id="selectedTableBadge" class="px-3.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-display font-bold text-sm">
+                        Chưa chọn bàn
+                    </span>
+                </div>
+            </div>
+
+            <!-- Lưới đầy đủ các bàn A00-A19, R02-R12, V17-V27, VAR. T -->
+            <div id="tablesGrid" class="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-13 gap-2 max-h-[190px] sm:max-h-[205px] overflow-y-auto pr-1"></div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 3: MÀN HÌNH CẢM ƠN                                             -->
+    <!-- ===================================================================== -->
+    <section id="screenThankYou" class="hidden flex-1 flex flex-col items-center justify-center px-6 py-10 text-center animate-fade-in">
+        <div class="max-w-2xl w-full rounded-3xl bg-gradient-to-b from-arena-card to-arena-navy border-2 border-arena-gold/45 p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-arena-gold/10 to-transparent pointer-events-none"></div>
+            
+            <!-- Logo thương hiệu + Icon Tick Xanh -->
+            <div class="relative inline-flex items-center justify-center mb-6">
+                <div id="thankYouLogoSlot" class="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center"></div>
+                <div class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-emerald-500 border-4 border-arena-card flex items-center justify-center shadow-lg animate-scale-up">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+            </div>
+
+            <h2 class="font-display font-extrabold text-2xl sm:text-4xl text-white leading-relaxed mb-3">
+                Cảm ơn quý khách đã đánh giá để <span class="gold-gradient-text">VAR</span> có thể phục vụ tốt hơn
+            </h2>
+
+            <p id="thankYouSummary" class="text-slate-300 text-sm sm:text-base mb-7 font-medium"></p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div class="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-arena-dark border border-arena-border text-xs sm:text-sm text-slate-300">
+                    <span>Tự động quay về trang chủ sau</span>
+                    <span id="countdownTimer" class="font-display font-bold text-arena-gold text-base">3.5</span>
+                    <span>giây</span>
+                </div>
+                <button onclick="goToScreen('welcome')"
+                    class="px-6 py-2.5 rounded-full gold-gradient-bg text-arena-dark font-display font-bold text-sm hover:brightness-110 transition-all active:scale-95">
+                    Hoàn tất ngay
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL NHẮC CHỌN BÀN KHI BẤM "TỐT" MÀ CHƯA CHỌN BÀN                   -->
+    <!-- ===================================================================== -->
+    <div id="quickTablePromptModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="w-full max-w-lg rounded-3xl bg-arena-card border-2 border-arena-gold/50 p-6 sm:p-8 text-center shadow-2xl animate-scale-up">
+            <div class="w-16 h-16 rounded-2xl bg-arena-gold/15 border border-arena-gold/40 flex items-center justify-center text-3xl mx-auto mb-4">
+                🎱
+            </div>
+            <h3 class="font-display font-extrabold text-xl sm:text-2xl text-white mb-2">
+                Quý khách chưa chọn số bàn!
+            </h3>
+            <p class="text-slate-400 text-sm mb-6">
+                Vui lòng chọn số bàn đã chơi ở phía dưới để VAR ghi nhận chính xác nhất, hoặc bấm bỏ qua để gửi đánh giá ngay.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="closeQuickTablePrompt()"
+                    class="flex-1 py-3.5 px-5 rounded-2xl gold-gradient-bg text-arena-dark font-display font-extrabold text-base hover:brightness-110 transition-all">
+                    Quay lại chọn bàn
+                </button>
+                <button onclick="skipTableAndSubmitGood()"
+                    class="py-3.5 px-5 rounded-2xl bg-arena-dark border border-arena-border text-slate-300 hover:text-white font-semibold text-sm transition-all">
+                    Bỏ qua chọn bàn
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL CHI TIẾT VẤN ĐỀ (KHI CHỌN BÌNH THƯỜNG HOẶC KÉM)                 -->
+    <!-- ===================================================================== -->
+    <div id="issueModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
+        <div class="w-full max-w-2xl rounded-3xl bg-arena-card border-2 border-arena-gold/50 p-6 sm:p-8 shadow-2xl animate-scale-up max-h-[92vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 mb-2">
+                <div>
+                    <span id="issueModalBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                        Đánh giá: Bình thường
+                    </span>
+                    <h3 class="font-display font-extrabold text-xl sm:text-2xl text-white">
+                        Quý khách chưa hài lòng về vấn đề nào?
+                    </h3>
+                </div>
+                <button onclick="closeIssueModal()" class="p-2.5 rounded-xl bg-arena-dark text-slate-400 hover:text-white border border-arena-border">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Chọn nhanh bàn ngay trong Modal nếu khách quên chọn ở ngoài -->
+            <div id="modalQuickTableArea" class="mb-5 p-3.5 rounded-2xl bg-arena-navy/80 border border-arena-gold/30">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-arena-goldLight uppercase tracking-wider">
+                        🎱 Số bàn đã chơi: <span id="modalSelectedTableLabel" class="text-white underline">Chưa chọn</span>
+                    </span>
+                    <span class="text-[11px] text-slate-400">(Chạm để chọn nhanh)</span>
+                </div>
+                <div id="modalMiniTablesGrid" class="flex gap-1.5 overflow-x-auto pb-1.5"></div>
+            </div>
+
+            <p class="text-slate-400 text-sm mb-4">
+                Chạm trực tiếp vào vấn đề dưới đây để gửi phản hồi ngay lập tức:
+            </p>
+
+            <!-- 3 Lựa chọn vấn đề 1 chạm gửi ngay -->
+            <div class="space-y-3.5">
+                <button type="button" onclick="selectIssueAndSubmit('Chất lượng cơ sở vật chất')"
+                    class="group w-full flex items-center justify-between p-5 rounded-2xl bg-arena-dark border-2 border-arena-border hover:border-arena-gold hover:bg-arena-gold/10 text-left transition-all active:scale-[0.98]">
+                    <div class="flex items-center gap-4">
+                        <span class="w-14 h-14 rounded-2xl bg-arena-gold/15 border border-arena-gold/30 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🎱</span>
+                        <div>
+                            <div class="font-display font-bold text-lg sm:text-xl text-white group-hover:text-arena-goldLight">Chất lượng cơ sở vật chất</div>
+                            <div class="text-xs sm:text-sm text-slate-400">Bàn bi-a, cơ, bóng, ánh sáng, điều hòa, không gian...</div>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-500 group-hover:text-arena-gold transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+
+                <button type="button" onclick="selectIssueAndSubmit('Chất lượng nhân viên')"
+                    class="group w-full flex items-center justify-between p-5 rounded-2xl bg-arena-dark border-2 border-arena-border hover:border-arena-gold hover:bg-arena-gold/10 text-left transition-all active:scale-[0.98]">
+                    <div class="flex items-center gap-4">
+                        <span class="w-14 h-14 rounded-2xl bg-arena-gold/15 border border-arena-gold/30 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">👔</span>
+                        <div>
+                            <div class="font-display font-bold text-lg sm:text-xl text-white group-hover:text-arena-goldLight">Chất lượng nhân viên</div>
+                            <div class="text-xs sm:text-sm text-slate-400">Thái độ phục vụ, tốc độ hỗ trợ, xếp bi, thanh toán...</div>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-500 group-hover:text-arena-gold transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+
+                <button type="button" onclick="selectIssueAndSubmit('Chất lượng đồ ăn uống')"
+                    class="group w-full flex items-center justify-between p-5 rounded-2xl bg-arena-dark border-2 border-arena-border hover:border-arena-gold hover:bg-arena-gold/10 text-left transition-all active:scale-[0.98]">
+                    <div class="flex items-center gap-4">
+                        <span class="w-14 h-14 rounded-2xl bg-arena-gold/15 border border-arena-gold/30 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🍹</span>
+                        <div>
+                            <div class="font-display font-bold text-lg sm:text-xl text-white group-hover:text-arena-goldLight">Chất lượng đồ ăn uống</div>
+                            <div class="text-xs sm:text-sm text-slate-400">Hương vị đồ uống, món ăn, thời gian phục vụ đồ...</div>
+                        </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-500 group-hover:text-arena-gold transform group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL CÀI ĐẶT GOOGLE SHEET & QUẢN TRỊ (CHO QUẢN LÝ)                   -->
+    <!-- ===================================================================== -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-3xl bg-arena-card border border-arena-border shadow-2xl overflow-hidden animate-scale-up">
+            
+            <div class="flex items-center justify-between px-6 py-4 bg-arena-dark border-b border-arena-border">
+                <div class="flex items-center gap-3">
+                    <span class="w-9 h-9 rounded-xl bg-arena-gold/20 text-arena-gold flex items-center justify-center font-bold">⚙️</span>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-white">Cấu hình Google Sheet & Quản lý Kiosk</h3>
+                        <p class="text-xs text-slate-400">VAR BILLIARDS ARENA - Hệ thống đồng bộ dữ liệu thời gian thực</p>
+                    </div>
+                </div>
+                <button onclick="closeSettingsModal()" class="p-2 rounded-xl bg-arena-card text-slate-400 hover:text-white border border-arena-border">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                
+                <!-- 1. Tùy chỉnh Logo (Ưu tiên dùng trực tiếp file logoVARcut_3.png) -->
+                <div class="p-5 rounded-2xl bg-arena-dark border border-arena-border">
+                    <h4 class="font-display font-bold text-sm uppercase tracking-wider text-arena-gold mb-2">1. Quản lý Logo hiển thị</h4>
+                    <p class="text-xs text-slate-400 mb-3">Hệ thống mặc định tải trực tiếp file <code class="text-arena-goldLight">logoVARcut_3.png</code> (tự động dùng đồ họa vector chuẩn nếu không tìm thấy file ảnh). Bạn cũng có thể chọn ảnh từ máy iPad để lưu cố định:</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-arena-card border border-arena-gold/50 text-arena-goldLight hover:bg-arena-gold/10 text-xs sm:text-sm font-semibold transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span>Chọn file logoVARcut_3.png từ iPad</span>
+                            <input type="file" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                        </label>
+                        <button onclick="resetDefaultLogo()" class="px-4 py-2.5 rounded-xl bg-arena-card border border-arena-border text-slate-300 hover:text-white text-xs sm:text-sm">
+                            Dùng Logo mặc định (logoVARcut_3.png)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Kết nối Google Sheet -->
+                <div class="p-5 rounded-2xl bg-arena-dark border border-arena-border space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="font-display font-bold text-sm uppercase tracking-wider text-arena-gold">2. Kết nối đồng bộ Google Sheet</h4>
+                        <button onclick="copyAppsScriptCode()"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span>Sao chép mã Google Apps Script</span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1.5">Dán đường dẫn Web App URL từ Google Apps Script:</label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="url" id="googleScriptUrlInput" placeholder="https://script.google.com/macros/s/..../exec"
+                                class="flex-1 px-4 py-3 rounded-xl bg-arena-card border border-arena-border text-white text-sm focus:outline-none focus:border-arena-gold">
+                            <div class="flex gap-2">
+                                <button onclick="saveWebhookUrl()"
+                                    class="px-5 py-3 rounded-xl gold-gradient-bg text-arena-dark font-bold text-sm hover:brightness-110">
+                                    Lưu cấu hình
+                                </button>
+                                <button onclick="sendTestRecord()"
+                                    class="px-4 py-3 rounded-xl bg-arena-navy border border-arena-gold/40 text-arena-goldLight font-semibold text-sm hover:bg-arena-gold/10">
+                                    Gửi thử dữ liệu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <details class="text-xs text-slate-400 bg-arena-card/60 p-3.5 rounded-xl border border-arena-border/60">
+                        <summary class="cursor-pointer font-semibold text-slate-200">Hướng dẫn cài đặt Google Sheet 5 cột tự động (Chạm để xem chi tiết)</summary>
+                        <ol class="list-decimal list-inside space-y-1.5 mt-2.5 text-slate-400 leading-relaxed">
+                            <li>Tạo một file Google Sheet mới trên Google Drive.</li>
+                            <li>Trên thanh menu chọn <strong>Tiện ích mở rộng (Extensions)</strong> &rarr; <strong>Apps Script</strong>.</li>
+                            <li>Bấm nút <strong>"Sao chép mã Google Apps Script"</strong> ở trên, xóa mã cũ trong trình soạn thảo và dán mã mới vào, sau đó bấm biểu tượng Lưu.</li>
+                            <li>Bấm nút xanh <strong>Triển khai (Deploy)</strong> &rarr; <strong>Tùy chọn triển khai mới (New deployment)</strong> &rarr; Chọn biểu tượng bánh răng &rarr; <strong>Ứng dụng web (Web app)</strong>.</li>
+                            <li>Tại mục <em>Người có quyền truy cập (Who has access)</em>, chọn <strong>Bất kỳ ai (Anyone)</strong> &rarr; Bấm <strong>Triển khai</strong> &rarr; Cấp quyền truy cập.</li>
+                            <li>Sao chép đường dẫn <strong>Web app URL</strong> dán vào ô phía trên, bấm <strong>Lưu cấu hình</strong> rồi bấm <strong>Gửi thử dữ liệu</strong> để kiểm tra 5 cột tự động xuất hiện trên Google Sheet.</li>
+                        </ol>
+                    </details>
+                </div>
+
+                <!-- 3. Bảng dữ liệu đánh giá lưu trên iPad & Xuất CSV -->
+                <div class="p-5 rounded-2xl bg-arena-dark border border-arena-border">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h4 class="font-display font-bold text-sm uppercase tracking-wider text-arena-gold">
+                                3. Dữ liệu đánh giá đã lưu (<span id="totalReviewsCount">0</span> lượt)
+                            </h4>
+                            <p class="text-xs text-slate-400">Tự động lưu dự phòng trên iPad ngay cả khi mất Wi-Fi</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportToCSV()"
+                                class="px-4 py-2 rounded-xl bg-arena-gold/20 border border-arena-gold/50 text-arena-goldLight hover:bg-arena-gold/30 text-xs font-bold">
+                                📥 Xuất file CSV (Excel)
+                            </button>
+                            <button onclick="clearLocalReviews()"
+                                class="px-3.5 py-2 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-400 hover:bg-rose-500/25 text-xs font-semibold">
+                                Xóa lịch sử
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-60 rounded-xl border border-arena-border">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-arena-card text-slate-300 uppercase border-b border-arena-border sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2.5">Cơ sở đánh giá</th>
+                                    <th class="px-3 py-2.5">Ngày tháng đánh giá</th>
+                                    <th class="px-3 py-2.5">Số bàn đánh giá</th>
+                                    <th class="px-3 py-2.5">Tiêu chí đánh giá</th>
+                                    <th class="px-3 py-2.5">Vấn đề đánh giá</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewsTableBody" class="divide-y divide-arena-border/60 text-slate-300">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có dữ liệu đánh giá nào</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT LOGIC                                                      -->
+    <!-- ===================================================================== -->
+    <script>
+        // Sử dụng trực tiếp file ảnh chuẩn logoVARcut_4.png
+        const OFFICIAL_VAR_LOGO_SRC = "logoVARcut_4.png";
+
+        // Danh sách đầy đủ các bàn theo đúng yêu cầu
+        const TABLES_LIST = [
+            ...Array.from({ length: 20 }, (_, i) => `A${String(i).padStart(2, '0')}`),
+            ...Array.from({ length: 11 }, (_, i) => `R${String(i + 2).padStart(2, '0')}`),
+            'V17', 'V18', 'V19', 'V20', 'V26', 'V27', 'VAR. T'
+        ];
+
+        let appState = {
+            branch: '',
+            selectedTable: '',
+            currentRating: '',
+            countdownInterval: null
+        };
+
+        const STORAGE_KEYS = {
+            REVIEWS: 'var_billiards_reviews_v2',
+            WEBHOOK_URL: 'var_billiards_webhook_url_v2',
+            CUSTOM_LOGO: 'var_billiards_custom_logo_v2'
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyLogoToAllSlots();
+            renderTablesGrid();
+            loadSavedSettings();
+        });
+
+        // Gắn chính xác hình ảnh logoVARcut_3.png vào tất cả các màn hình
+        function applyLogoToAllSlots() {
+            const customLogo = localStorage.getItem(STORAGE_KEYS.CUSTOM_LOGO);
+            const logoSrc = customLogo || OFFICIAL_VAR_LOGO_SRC;
+
+            ['mainLogoSlot', 'headerLogoSlot', 'thankYouLogoSlot'].forEach(slotId => {
+                const slot = document.getElementById(slotId);
+                if (!slot) return;
+
+                const img = document.createElement('img');
+                img.src = logoSrc;
+                img.alt = 'VAR BILLIARDS ARENA';
+                img.className = 'w-full h-full object-contain';
+                
+                // Fallback nếu chưa đặt file ảnh cùng thư mục
+                img.onerror = function() {
+                    slot.innerHTML = `
+                        <div class="w-full h-full rounded-2xl bg-arena-navy border border-arena-gold/50 flex flex-col items-center justify-center p-2 text-center">
+                            <span class="text-2xl">🎱</span>
+                            <span class="font-display font-black text-xs text-arena-gold mt-1">VAR BILLIARDS</span>
+                            <span class="text-[9px] text-slate-400">Đặt file logoVARcut_4.png cùng thư mục</span>
+                        </div>
+                    `;
+                };
+
+                slot.innerHTML = '';
+                slot.appendChild(img);
+            });
+        }
+
+        // Render danh sách bàn ở Screen 2 và thanh chọn nhanh trong Modal
+        function renderTablesGrid() {
+            const grid = document.getElementById('tablesGrid');
+            const miniGrid = document.getElementById('modalMiniTablesGrid');
+            grid.innerHTML = '';
+            miniGrid.innerHTML = '';
+
+            TABLES_LIST.forEach(table => {
+                const isVip = table.startsWith('V');
+
+                // Nút bàn ở bảng chính bên dưới màn hình đánh giá
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.table = table;
+                btn.textContent = table;
+                btn.onclick = () => selectTable(table);
+                btn.className = `table-btn py-2.5 px-1.5 rounded-xl font-display font-bold text-xs sm:text-sm border transition-all active:scale-95 bg-arena-dark border-arena-border hover:border-arena-gold/70 ${isVip ? 'text-amber-200' : 'text-slate-200'}`;
+                grid.appendChild(btn);
+
+                // Nút bàn chọn nhanh trong Modal (khi chọn Bình thường / Kém)
+                const miniBtn = document.createElement('button');
+                miniBtn.type = 'button';
+                miniBtn.dataset.table = table;
+                miniBtn.textContent = table;
+                miniBtn.onclick = () => selectTable(table);
+                miniBtn.className = `mini-table-btn shrink-0 py-1.5 px-3 rounded-lg font-display font-bold text-xs border transition-all active:scale-95 bg-arena-dark border-arena-border hover:border-arena-gold/70 ${isVip ? 'text-amber-200' : 'text-slate-200'}`;
+                miniGrid.appendChild(miniBtn);
+            });
+        }
+
+        function selectBranch(branchName) {
+            appState.branch = branchName;
+            appState.selectedTable = '';
+            appState.currentRating = '';
+            document.getElementById('currentBranchLabel').textContent = branchName;
+            updateSelectedTableUI();
+            goToScreen('rating');
+        }
+
+        function selectTable(tableName) {
+            appState.selectedTable = (appState.selectedTable === tableName) ? '' : tableName;
+            updateSelectedTableUI();
+        }
+
+        function updateSelectedTableUI() {
+            const badge = document.getElementById('selectedTableBadge');
+            const modalLabel = document.getElementById('modalSelectedTableLabel');
+
+            if (appState.selectedTable) {
+                badge.textContent = appState.selectedTable;
+                badge.className = 'px-3.5 py-1 rounded-xl gold-gradient-bg text-arena-dark font-display font-extrabold text-sm shadow';
+                modalLabel.textContent = appState.selectedTable;
+            } else {
+                badge.textContent = 'Chưa chọn bàn';
+                badge.className = 'px-3.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-display font-bold text-sm';
+                modalLabel.textContent = 'Không chọn';
+            }
+
+            document.querySelectorAll('.table-btn, .mini-table-btn').forEach(btn => {
+                const isSelected = btn.dataset.table === appState.selectedTable;
+                if (isSelected) {
+                    btn.classList.add('gold-gradient-bg', 'text-arena-dark', 'border-arena-goldLight', 'shadow-md');
+                    btn.classList.remove('bg-arena-dark', 'text-slate-200', 'text-amber-200');
+                } else {
+                    btn.classList.remove('gold-gradient-bg', 'text-arena-dark', 'border-arena-goldLight', 'shadow-md');
+                    btn.classList.add('bg-arena-dark');
+                    btn.classList.add(btn.dataset.table.startsWith('V') ? 'text-amber-200' : 'text-slate-200');
+                }
+            });
+        }
+
+        function goToScreen(screenName) {
+            if (appState.countdownInterval) {
+                clearInterval(appState.countdownInterval);
+                appState.countdownInterval = null;
+            }
+
+            const welcomeEl = document.getElementById('screenWelcome');
+            const ratingEl = document.getElementById('screenRating');
+            const thankYouEl = document.getElementById('screenThankYou');
+
+            // Ẩn tất cả các màn hình
+            welcomeEl.classList.add('hidden');
+            ratingEl.classList.add('hidden');
+            thankYouEl.classList.add('hidden');
+
+            // Hiển thị màn hình được chọn và cuộn về đầu trang
+            if (screenName === 'welcome') {
+                welcomeEl.classList.remove('hidden');
+            } else if (screenName === 'rating') {
+                ratingEl.classList.remove('hidden');
+            } else if (screenName === 'thankyou') {
+                thankYouEl.classList.remove('hidden');
+                startReturnCountdown();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Xử lý khi khách bấm 1 trong 3 icon đánh giá
+        function handleRatingClick(ratingType) {
+            appState.currentRating = ratingType;
+
+            if (ratingType === 'Tốt') {
+                if (!appState.selectedTable) {
+                    // Nếu chưa chọn bàn, hiện nhắc nhẹ chọn bàn hoặc cho phép bỏ qua gửi luôn
+                    document.getElementById('quickTablePromptModal').classList.remove('hidden');
+                    return;
+                }
+                submitFinalReview('Tốt', '');
+            } else {
+                // Nếu chọn Bình thường hoặc Kém -> Mở Modal 3 vấn đề
+                openIssueModal(ratingType);
+            }
+        }
+
+        function closeQuickTablePrompt() {
+            document.getElementById('quickTablePromptModal').classList.add('hidden');
+            const tableBox = document.getElementById('tableSelectionBox');
+            tableBox.classList.add('border-arena-gold', 'ring-2', 'ring-arena-gold/50');
+            setTimeout(() => tableBox.classList.remove('border-arena-gold', 'ring-2', 'ring-arena-gold/50'), 1600);
+        }
+
+        function skipTableAndSubmitGood() {
+            document.getElementById('quickTablePromptModal').classList.add('hidden');
+            submitFinalReview('Tốt', '');
+        }
+
+        function openIssueModal(ratingType) {
+            const badge = document.getElementById('issueModalBadge');
+            badge.textContent = `Đánh giá: ${ratingType}`;
+            badge.className = ratingType === 'Kém'
+                ? 'inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                : 'inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 bg-amber-500/20 text-amber-400 border border-amber-500/40';
+
+            updateSelectedTableUI();
+            document.getElementById('issueModal').classList.remove('hidden');
+        }
+
+        function closeIssueModal() {
+            document.getElementById('issueModal').classList.add('hidden');
+        }
+
+        // Chạm 1 chạm vào 1 trong 3 vấn đề -> Gửi ngay lập tức
+        function selectIssueAndSubmit(issueName) {
+            closeIssueModal();
+            submitFinalReview(appState.currentRating, issueName);
+        }
+
+        // Định dạng ngày tháng thực dd/MM/yyyy HH:mm:ss
+        function getFormattedRealTime() {
+            const now = new Date();
+            const dd = String(now.getDate()).padStart(2, '0');
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const yyyy = now.getFullYear();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+        }
+
+        // Lưu dữ liệu & đồng bộ Google Sheet với đúng 5 trường: coSo, thoiGian, soBan, tieuChi, vanDe
+        function submitFinalReview(rating, issueText) {
+            const payload = {
+                coSo: appState.branch || 'Chưa xác định',
+                thoiGian: getFormattedRealTime(),
+                soBan: appState.selectedTable || 'Không chọn',
+                tieuChi: rating,
+                vanDe: issueText || ''
+            };
+
+            // 1. Lưu dự phòng vào localStorage trên iPad
+            const reviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS) || '[]');
+            reviews.unshift(payload);
+            localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
+
+            // 2. Gửi tự động qua Google Apps Script Web App URL
+            sendToGoogleSheet(payload);
+
+            // 3. Hiển thị thông tin trên màn hình cảm ơn
+            const detailStr = payload.vanDe ? ` • Vấn đề: ${payload.vanDe}` : '';
+            document.getElementById('thankYouSummary').textContent =
+                `${payload.coSo} • Bàn: ${payload.soBan} • Đánh giá: ${payload.tieuChi}${detailStr}`;
+
+            goToScreen('thankyou');
+        }
+
+        async function sendToGoogleSheet(payload) {
+            const webhookUrl = localStorage.getItem(STORAGE_KEYS.WEBHOOK_URL);
+            if (!webhookUrl) return;
+
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (err) {
+                console.error('Lỗi gửi dữ liệu Google Sheet:', err);
+            }
+        }
+
+        // Đếm ngược 3.5 giây tự động quay về màn hình chào
+        function startReturnCountdown() {
+            let remaining = 3.5;
+            const timerEl = document.getElementById('countdownTimer');
+            timerEl.textContent = remaining.toFixed(1);
+
+            appState.countdownInterval = setInterval(() => {
+                remaining -= 0.5;
+                if (remaining <= 0) {
+                    clearInterval(appState.countdownInterval);
+                    appState.countdownInterval = null;
+                    goToScreen('welcome');
+                } else {
+                    timerEl.textContent = remaining.toFixed(1);
+                }
+            }, 500);
+        }
+
+        // =====================================================================
+        // QUẢN TRỊ & CẤU HÌNH GOOGLE SHEET
+        // =====================================================================
+        function loadSavedSettings() {
+            document.getElementById('googleScriptUrlInput').value = localStorage.getItem(STORAGE_KEYS.WEBHOOK_URL) || '';
+        }
+
+        function openSettingsModal() {
+            renderReviewsTable();
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveWebhookUrl() {
+            const url = document.getElementById('googleScriptUrlInput').value.trim();
+            localStorage.setItem(STORAGE_KEYS.WEBHOOK_URL, url);
+            showToast('Đã lưu cấu hình Google Sheet thành công!', 'success');
+        }
+
+        async function sendTestRecord() {
+            const url = document.getElementById('googleScriptUrlInput').value.trim();
+            if (!url) {
+                showToast('Vui lòng dán Web App URL trước khi gửi thử!', 'warning');
+                return;
+            }
+            localStorage.setItem(STORAGE_KEYS.WEBHOOK_URL, url);
+
+            const testPayload = {
+                coSo: 'CƠ SỞ TÂY SƠN (Dữ liệu thử)',
+                thoiGian: getFormattedRealTime(),
+                soBan: 'VAR. T',
+                tieuChi: 'Tốt',
+                vanDe: ''
+            };
+
+            await sendToGoogleSheet(testPayload);
+            showToast('Đã gửi dòng dữ liệu thử sang Google Sheet! Hãy kiểm tra trang tính của bạn.', 'success');
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    localStorage.setItem(STORAGE_KEYS.CUSTOM_LOGO, e.target.result);
+                    applyLogoToAllSlots();
+                    showToast('Đã cập nhật Logo mới từ thiết bị!', 'success');
+                } catch (err) {
+                    showToast('Dung lượng ảnh quá lớn, vui lòng chọn ảnh dưới 2MB', 'warning');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetDefaultLogo() {
+            localStorage.removeItem(STORAGE_KEYS.CUSTOM_LOGO);
+            applyLogoToAllSlots();
+            showToast('Đã đặt lại về logoVARcut_4.png mặc định', 'success');
+        }
+
+        // Sao chép mã Google Apps Script tạo đúng 5 cột theo yêu cầu
+        function copyAppsScriptCode() {
+            const code = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  
+  // Tự động tạo tiêu đề 5 cột chuẩn nếu Google Sheet đang trống
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      "Cơ sở đánh giá",
+      "Ngày tháng đánh giá",
+      "Số bàn đánh giá",
+      "Tiêu chí đánh giá",
+      "Vấn đề đánh giá"
+    ]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#D4AF37").setFontColor("#000000");
+  }
+  
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.coSo || "",
+    data.thoiGian || "",
+    data.soBan || "",
+    data.tieuChi || "",
+    data.vanDe || ""
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast('Đã sao chép mã Google Apps Script 5 cột! Hãy dán vào Google Sheet.', 'success');
+        }
+
+        function renderReviewsTable() {
+            const reviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS) || '[]');
+            document.getElementById('totalReviewsCount').textContent = reviews.length;
+
+            const tbody = document.getElementById('reviewsTableBody');
+            if (reviews.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">Chưa có dữ liệu đánh giá nào</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = reviews.map(r => {
+                let color = 'text-emerald-400 font-bold';
+                if (r.tieuChi === 'Bình thường') color = 'text-amber-400 font-bold';
+                if (r.tieuChi === 'Kém') color = 'text-rose-400 font-bold';
+
+                return `
+                    <tr class="hover:bg-arena-card/60">
+                        <td class="px-3 py-2.5 font-medium text-white">${r.coSo}</td>
+                        <td class="px-3 py-2.5 text-slate-400">${r.thoiGian}</td>
+                        <td class="px-3 py-2.5 font-bold text-arena-goldLight">${r.soBan}</td>
+                        <td class="px-3 py-2.5 ${color}">${r.tieuChi}</td>
+                        <td class="px-3 py-2.5 text-slate-300">${r.vanDe || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function exportToCSV() {
+            const reviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS) || '[]');
+            if (reviews.length === 0) {
+                showToast('Chưa có dữ liệu để xuất file CSV', 'warning');
+                return;
+            }
+
+            const headers = ['Cơ sở đánh giá', 'Ngày tháng đánh giá', 'Số bàn đánh giá', 'Tiêu chí đánh giá', 'Vấn đề đánh giá'];
+            const rows = [
+                headers.join(','),
+                ...reviews.map(r => [
+                    `"${r.coSo}"`,
+                    `"${r.thoiGian}"`,
+                    `"${r.soBan}"`,
+                    `"${r.tieuChi}"`,
+                    `"${r.vanDe || ''}"`
+                ].join(','))
+            ];
+
+            const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Danh_Gia_VAR_Billiards_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Đã tải xuống file CSV thành công!', 'success');
+        }
+
+        function clearLocalReviews() {
+            localStorage.removeItem(STORAGE_KEYS.REVIEWS);
+            renderReviewsTable();
+            showToast('Đã xóa lịch sử đánh giá lưu trên máy', 'success');
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            const style = type === 'warning'
+                ? 'bg-amber-950/95 border-amber-500 text-amber-200'
+                : 'bg-emerald-950/95 border-emerald-500 text-emerald-200';
+            el.className = `px-5 py-3 rounded-2xl border shadow-2xl text-sm font-semibold backdrop-blur-md animate-fade-in ${style}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transition = 'opacity 0.3s';
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
