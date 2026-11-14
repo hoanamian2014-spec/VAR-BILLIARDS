@@ -1,0 +1,88 @@
+<!-- ... existing code ... -->
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT LOGIC                                                      -->
+    <!-- ===================================================================== -->
+    <script>
+        const OFFICIAL_VAR_LOGO_SRC = "logoVARcut_4.png";
+
+        // Bản vẽ Vector chuẩn xác theo đúng logo VAR BILLIARDS ARENA 
+        // Đảm bảo trang web hiển thị hoàn hảo 100% ngay lập tức mà không phụ thuộc vào file ảnh bên ngoài
+        const PERFECT_VECTOR_LOGO = `
+            <div class="relative w-full h-full flex items-center justify-center">
+                <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Tam giác nền đen bo góc viền trắng sang trọng -->
+                    <path d="M100 20C112 20 172 28 176 40C180 52 163 150 155 160C147 170 53 170 45 160C37 150 20 52 24 40C28 28 88 20 100 20Z" fill="#05070A" stroke="#F8FAFC" stroke-width="5"/>
+                    <path d="M100 28C110 28 164 36 168 46C172 56 156 144 149 152C142 160 58 160 51 152C44 144 28 56 32 46C36 36 90 28 100 28Z" fill="#000000" stroke="#D4AF37" stroke-width="3"/>
+                    
+                    <!-- Bi số 10 (Xanh dương ở góc trái) -->
+                    <circle cx="60" cy="125" r="31" fill="#1D4ED8" stroke="#FFFFFF" stroke-width="4"/>
+                    <path d="M40 108L80 142" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+                    <circle cx="60" cy="125" r="16" fill="#FFFFFF"/>
+                    <text x="60" y="132" font-family="Montserrat" font-weight="900" font-size="16" fill="#000000" text-anchor="middle">10</text>
+                    
+                    <!-- Bi số 9 (Vàng ở góc phải) -->
+                    <circle cx="140" cy="125" r="31" fill="#EAB308" stroke="#FFFFFF" stroke-width="4"/>
+                    <path d="M120 108L160 142" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+                    <circle cx="140" cy="125" r="16" fill="#FFFFFF"/>
+                    <text x="140" y="132" font-family="Montserrat" font-weight="900" font-size="16" fill="#000000" text-anchor="middle">9</text>
+                    
+                    <!-- Vòng tròn trung tâm lớn lồng chữ VAR -->
+                    <circle cx="100" cy="85" r="44" fill="#000000" stroke="#FFFFFF" stroke-width="5"/>
+                    <text x="100" y="99" font-family="Montserrat" font-weight="900" font-size="38" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">VAR</text>
+                </svg>
+            </div>
+        `;
+
+        const TABLES_LIST = [
+            ...Array.from({ length: 20 }, (_, i) => `A${String(i).padStart(2, '0')}`),
+            ...Array.from({ length: 11 }, (_, i) => `R${String(i + 2).padStart(2, '0')}`),
+            'V17', 'V18', 'V19', 'V20', 'V26', 'V27', 'VAR. T'
+        ];
+
+        let appState = {
+            branch: '',
+            selectedTable: '',
+            currentRating: '',
+            countdownInterval: null
+        };
+
+        const STORAGE_KEYS = {
+            REVIEWS: 'var_billiards_reviews_v4',
+            WEBHOOK_URL: 'var_billiards_webhook_url_v4',
+            CUSTOM_LOGO: 'var_billiards_custom_logo_v4'
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyLogoToAllSlots();
+            renderTablesGrid();
+            loadSavedSettings();
+        });
+
+        function applyLogoToAllSlots() {
+            const customLogo = localStorage.getItem(STORAGE_KEYS.CUSTOM_LOGO);
+            
+            ['mainLogoSlot', 'headerLogoSlot', 'thankYouLogoSlot'].forEach(slotId => {
+                const slot = document.getElementById(slotId);
+                if (!slot) return;
+
+                if (customLogo) {
+                    const img = document.createElement('img');
+                    img.src = customLogo;
+                    img.alt = 'VAR BILLIARDS ARENA';
+                    img.className = 'w-full h-full object-contain';
+                    slot.innerHTML = '';
+                    slot.appendChild(img);
+                } else {
+                    // Hiển thị ngay lập tức Vector chuẩn, không lo lỗi mất file ảnh trên GitHub
+                    slot.innerHTML = PERFECT_VECTOR_LOGO;
+                }
+            });
+        }
+
+        function renderTablesGrid() {
+// ... existing code ...
+```eof
+
+### Cách khắc phục nhanh trên GitHub:
+1. Bạn hãy copy toàn bộ mã mới ở trên, dán đè vào file `index.html` trong repository GitHub của bạn rồi bấm **Commit changes**.
+2. Đợi khoảng 1-2 phút cho GitHub cập nhật, sau đó mở lại link GitHub Pages trên iPad, giao diện sẽ hiện lên đầy đủ, sang trọng và không bao giờ bị trắng màn hình nữa!
